@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Periodization Tracker</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #475569;
+            --accent: #f59e0b;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --border: #e2e8f0;
+            --success: #10b981;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            /* Prevents iOS tap highlight */
+            -webkit-tap-highlight-color: transparent; 
+        }
+
+        h1 { text-align: center; margin-bottom: 20px; font-size: 1.8em; }
+
+        /* Configuration Panel */
+        .config-panel {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            border-left: 5px solid var(--primary);
+        }
+
+        .config-group label {
+            display: block;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 8px;
+        }
+
+        /* 16px font prevents iOS auto-zoom on focus */
+        input[type="date"], input[type="number"] {
+            width: 100%;
+            padding: 12px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            font-size: 16px; 
+            background: #fff;
+            box-sizing: border-box;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            background: #1e293b;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        .phase-badge {
+            background: var(--accent);
+            color: black;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .week-indicator {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        /* Card Styling */
+        .exercise-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .exercise-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--bg);
+            padding-bottom: 10px;
+        }
+
+        .target-muscle {
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary);
+            font-weight: 800;
+        }
+
+        /* Selection Phase */
+        .selection-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .select-btn {
+            background: #fff;
+            border: 2px solid var(--border);
+            padding: 15px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            font-weight: 500;
+            color: var(--secondary);
+            font-size: 16px;
+        }
+
+        .select-btn:hover, .select-btn:active {
+            border-color: var(--primary);
+            background-color: #eff6ff;
+            color: var(--primary);
+        }
+
+        .select-btn span {
+            display: block;
+            font-size: 0.75em;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        /* Active Phase */
+        .active-view {
+            text-align: center;
+        }
+
+        .active-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: var(--text);
+            margin-bottom: 15px;
+        }
+
+        /* 1RM Input Section */
+        .orm-input-container {
+            margin: 0 auto 15px auto;
+            max-width: 100%;
+            text-align: left;
+        }
+        
+        .orm-input-container label {
+            font-size: 0.75em;
+            color: var(--secondary);
+            font-weight: bold;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            background: #eff6ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #dbeafe;
+        }
+
+        .stat-box {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .stat-box strong { 
+            display: block; 
+            color: #64748b; 
+            font-size: 0.7em; 
+            text-transform: uppercase; 
+            margin-bottom: 4px;
+        }
+        
+        .stat-value {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 1.1em;
+        }
+
+        .load-detail {
+            font-size: 0.75em;
+            color: var(--secondary);
+            font-weight: normal;
+            display: block;
+            margin-top: 2px;
+        }
+
+        .change-btn {
+            background: transparent;
+            border: 1px solid #94a3b8;
+            color: #64748b;
+            padding: 10px 18px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+            width: 100%;
+            max-width: 250px;
+        }
+
+        .change-btn:active {
+            background: #e2e8f0;
+        }
+
+        .rest-day {
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+            font-size: 1.3em;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        /* --- MOBILE RESPONSIVENESS (MEDIA QUERIES) --- */
+        @media (min-width: 600px) {
+            .selection-grid { grid-template-columns: 1fr 1fr 1fr; }
+            .orm-input-container { max-width: 200px; }
+            .change-btn { width: auto; }
+        }
+
+        @media (max-width: 599px) {
+            body {
+                padding: 12px;
+            }
+
+            .config-panel {
+                grid-template-columns: 1fr; /* Stack inputs on small screens */
+                gap: 15px;
+            }
+
+            .status-bar {
+                flex-direction: column; /* Stack status items */
+                gap: 10px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr; /* 2x2 grid for stats instead of 4 in a row */
+                gap: 12px;
+            }
+
+            .stat-box {
+                background: #ffffff;
+                padding: 10px;
+                border-radius: 6px;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Workout Tracker</h1>
+
+    <div class="config-panel">
+        <div class="config-group">
+            <label for="startDate">Program Start Date</label>
+            <input type="date" id="startDate">
+        </div>
+        <div class="config-group">
+            <label for="currentDate">Today's Date</label>
+            <input type="date" id="currentDate">
+        </div>
+    </div>
+
+    <div id="statusHeader" class="status-bar" style="display:none;">
+        <span id="weekDisplay" class="week-indicator">Week 1</span>
+        <span id="phaseDisplay" class="phase-badge">Base Phase</span>
+    </div>
+
+    <div id="workoutContainer"></div>
+
+<script>
+    // --- 1. CONFIGURATION DATA ---
+
+    const periodizationData = [
+        { week: 1, phase: 'Base', sets: 3, reps: '12', loadStr: '60%', loadPct: 0.60, rpe: '7' },
+        { week: 2, phase: 'Base', sets: 4, reps: '12', loadStr: '60%', loadPct: 0.60, rpe: '7.5' },
+        { week: 3, phase: 'Base', sets: 4, reps: '15', loadStr: '55-60%', loadPct: 0.55, rpe: '8' },
+        { week: 4, phase: 'Build', sets: 4, reps: '10', loadStr: '70%', loadPct: 0.70, rpe: '8' },
+        { week: 5, phase: 'Build', sets: 4, reps: '10', loadStr: '72.5%', loadPct: 0.725, rpe: '8.5' },
+        { week: 6, phase: 'Build', sets: 5, reps: '10', loadStr: '75%', loadPct: 0.75, rpe: '9' },
+        { week: 7, phase: 'Peak', sets: 3, reps: '8', loadStr: '77-80%', loadPct: 0.775, rpe: '9' },
+        { week: 8, phase: 'Peak', sets: 3, reps: '6', loadStr: '82-85%', loadPct: 0.825, rpe: '9.5' },
+        { week: 9, phase: 'Deload', sets: 2, reps: '10', loadStr: '50%', loadPct: 0.50, rpe: '6' }
+    ];
+
+    // EXERCISE DATABASE
+    const csvData = `Day,Target,Primary Exercise,Exercise Alternative A,Exercise Alternative B,% 1RM,Rest
+Mon,Cardio,Jogging (2.5km in 30m),Treadmill Jogging,Outdoor Walk/Jog,RPE 6,N/A
+Tues,Fencing,Malam Basics & Bladework,Footwork Drills,Target Practice,Focus,N/A
+Wed,Fencing,Lesson & Sparring,Bout Scenarios,Tactical Drills,Max Effort,N/A
+Thurs,Quad/Isometric,Weighted Wall Sit,Bodyweight Wall Sit,Iso Lunge Hold,RPE 8,120s
+Thurs,Unilateral/Knee,Rear-Foot Elevated Split Squat ISO,Split Squat ISO,Step-up Hold,RPE 8,120s
+Thurs,Hip Hinge,Single-Leg Romanian Deadlift,B-Stance RDL,Glute Bridge ISO,RPE 7,90s
+Thurs,Core/Stability,Plank with Shoulder Taps,Standard Plank,Bird Dog,RPE 7,60s
+Thurs,Core/Anti-Rotation,Pallof Press,Cable Woodchopper,Side Plank,RPE 7,60s
+Sat,Upper Chest,Incline DB Bench Press,Incline Barbell Press,Incline Machine Press,70-75% 1RM,60-90s
+Sat,Shoulders,Machine Shoulder Press,DB Shoulder Press,Barbell Overhead Press,70-75% 1RM,60-90s
+Sat,Lateral Delts,Cable Lateral Raises,DB Lateral Raises,Machine Lateral Raises,RPE 8,60s
+Sat,Lower Chest/Triceps,Dips (Chest Version),Decline Pushups,Assisted Dips,Failure,60s
+Sat,Triceps,Tricep Overhead Extensions,Skullcrushers,Cable Pushdowns,RPE 8,60s
+Sun,Vertical Pull,Lat Pulldowns (Wide Grip),Pull-ups,Assisted Pull-ups,70-75% 1RM,60-90s
+Sun,Horizontal Pull,Seated Cable Rows,T-Bar Row,Chest-Supported Row,70-75% 1RM,60-90s
+Sun,Lat Isolation,Straight-Arm Cable Pulldowns,DB Pullover,Machine Pullover,RPE 8,60s
+Sun,Rear Delts,Face Pulls,Reverse Pec Deck,Bent-Over Reverse Flyes,RPE 8,60s
+Sun,Biceps/Brachialis,Hammer Curls,EZ Bar Curls,DB Bicep Curls,RPE 8,60s`;
+
+    // --- 2. STATE MANAGEMENT ---
+
+    let userSelections = {}; 
+    let user1RMs = {}; 
+
+    function parseCSV(csv) {
+        const lines = csv.trim().split('\n');
+        const headers = lines[0].split(',');
+        return lines.slice(1).map(line => {
+            const values = line.split(',');
+            return headers.reduce((obj, header, index) => {
+                obj[header.trim()] = values[index].trim();
+                return obj;
+            }, {});
+        });
+    }
+
+    const workoutData = parseCSV(csvData);
+
+    function getDayString(dateObj) {
+        const days = ['Sun', 'Mon', 'Tues', 'Wed', 'Thurs', 'Fri', 'Sat'];
+        return days[dateObj.getDay()];
+    }
+
+    function getCurrentProgramWeek(currentDate, startDate) {
+        const oneDay = 24 * 60 * 60 * 1000;
+        const diffDays = Math.round((currentDate - startDate) / oneDay);
+        if (diffDays < 0) return 0; 
+        return Math.floor(diffDays / 7) + 1;
+    }
+
+    // --- 3. RENDERING ---
+
+    function renderWorkout() {
+        const dateInput = document.getElementById('currentDate');
+        const startInput = document.getElementById('startDate');
+        const container = document.getElementById('workoutContainer');
+        const statusHeader = document.getElementById('statusHeader');
+        
+        if (!dateInput.value || !startInput.value) return;
+
+        const current = new Date(dateInput.value);
+        const start = new Date(startInput.value);
+        const weekNum = getCurrentProgramWeek(current, start);
+        const dayString = getDayString(current);
+
+        let currentStats = null;
+        if (weekNum < 1) {
+            statusHeader.style.display = 'flex';
+            statusHeader.innerHTML = `<span>Pre-Program</span><span>Wait to Start</span>`;
+        } else if (weekNum > 9) {
+            statusHeader.style.display = 'flex';
+            statusHeader.innerHTML = `<span>Program Finished</span><span>Completed</span>`;
+        } else {
+            currentStats = periodizationData[weekNum - 1];
+            statusHeader.style.display = 'flex';
+            statusHeader.innerHTML = `
+                <span class="week-indicator">Week ${weekNum}</span>
+                <span class="phase-badge">${currentStats.phase} Phase</span>
+            `;
+        }
+
+        container.innerHTML = '';
+        const todaysExercises = workoutData.filter(row => row.Day === dayString);
+
+        if (todaysExercises.length === 0) {
+            container.innerHTML = `<div class="rest-day">Rest Day (${dayString})</div>`;
+            return;
+        }
+
+        todaysExercises.forEach((ex, index) => {
+            const uniqueId = `${dayString}-${index}`;
+            const card = document.createElement('div');
+            card.className = 'exercise-card';
+
+            const isMainLift = ex['% 1RM'].includes('%') && !ex['Target'].includes('Plyometric');
+
+            const header = document.createElement('div');
+            header.className = 'exercise-header';
+            header.innerHTML = `<div class="target-muscle">${ex.Target}</div>`;
+            card.appendChild(header);
+
+            const contentArea = document.createElement('div');
+
+            if (userSelections[uniqueId]) {
+                const stored1RM = user1RMs[uniqueId] || "";
+                
+                let displaySets = currentStats ? currentStats.sets : "-";
+                let displayReps = currentStats ? currentStats.reps : "-";
+                let displayRPE  = currentStats ? currentStats.rpe : ex['Rest']; 
+                let displayLoad = "";
+
+                if (isMainLift && currentStats) {
+                    if (stored1RM > 0) {
+                        const calculatedWeight = Math.round(stored1RM * currentStats.loadPct);
+                        displayLoad = `${calculatedWeight} <span class="load-detail">(${currentStats.loadStr})</span>`;
+                    } else {
+                        displayLoad = `<span class="load-detail">Enter 1RM</span>`;
+                    }
+                } else {
+                    displayLoad = `RPE ${displayRPE}`;
+                    displayRPE = "-"; 
+                }
+
+                if(ex.Target.includes("Fencing") || ex.Target.includes("Cardio")) {
+                    displaySets = "Focus"; displayReps = "N/A"; displayLoad = "N/A"; displayRPE = "N/A";
+                }
+
+                let inputHtml = '';
+                if (isMainLift) {
+                    inputHtml = `
+                        <div class="orm-input-container">
+                            <label>Your 1RM (kg/lbs):</label>
+                            <input type="number" value="${stored1RM}" 
+                                onchange="update1RM('${uniqueId}', this.value)" placeholder="Enter Weight">
+                        </div>
+                    `;
+                }
+
+                contentArea.innerHTML = `
+                    <div class="active-view">
+                        <div class="active-name">${userSelections[uniqueId]}</div>
+                        ${inputHtml}
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <strong>Sets</strong>
+                                <div class="stat-value">${displaySets}</div>
+                            </div>
+                            <div class="stat-box">
+                                <strong>Reps</strong>
+                                <div class="stat-value">${displayReps}</div>
+                            </div>
+                            <div class="stat-box">
+                                <strong>Load</strong>
+                                <div class="stat-value" style="font-size:1em">${displayLoad}</div>
+                            </div>
+                            <div class="stat-box">
+                                <strong>RPE/Rest</strong>
+                                <div class="stat-value" style="font-size:0.85em">${isMainLift ? displayRPE : ex.Rest}</div>
+                            </div>
+                        </div>
+                        <button class="change-btn" onclick="resetSelection('${uniqueId}')">Swap Exercise</button>
+                    </div>
+                `;
+            } else {
+                contentArea.className = 'selection-grid';
+                const options = [
+                    { label: 'Primary', name: ex['Primary Exercise'] },
+                    { label: 'Alt A', name: ex['Exercise Alternative A'] },
+                    { label: 'Alt B', name: ex['Exercise Alternative B'] }
+                ];
+                options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'select-btn';
+                    btn.innerHTML = `<span>${opt.label}</span>${opt.name}`;
+                    btn.onclick = () => selectExercise(uniqueId, opt.name);
+                    contentArea.appendChild(btn);
+                });
+            }
+
+            card.appendChild(contentArea);
+            container.appendChild(card);
+        });
+    }
+
+    // --- 4. INTERACTION HELPERS ---
+
+    window.selectExercise = (id, name) => {
+        userSelections[id] = name;
+        renderWorkout();
+    };
+
+    window.resetSelection = (id) => {
+        userSelections[id] = null;
+        renderWorkout();
+    };
+
+    window.update1RM = (id, value) => {
+        user1RMs[id] = parseFloat(value);
+        renderWorkout(); 
+    };
+
+    function setNextMonday() {
+        const d = new Date();
+        d.setDate(d.getDate() + (1 + 7 - d.getDay()) % 7);
+        return d.toISOString().split('T')[0];
+    }
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    document.getElementById('currentDate').value = todayStr;
+    document.getElementById('startDate').value = setNextMonday();
+
+    document.getElementById('currentDate').addEventListener('change', () => { 
+        userSelections = {}; 
+        renderWorkout(); 
+    });
+    document.getElementById('startDate').addEventListener('change', renderWorkout);
+
+    renderWorkout();
+
+</script>
+</body>
+</html>
